@@ -1,0 +1,7 @@
+{
+  "name": "CogniaPrompt",
+  "description": "A high-end prompt engineering and optimization platform built to refine AI queries for maximum performance and clarity, featuring variations, reasoning, and historical tracking.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
