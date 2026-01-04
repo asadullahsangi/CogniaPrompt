@@ -69,10 +69,7 @@ export const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
       const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       audioContextRef.current = outputCtx;
 
-      const apiKey = (process.env.API_KEY || 
-                      process.env.GEMINI_API_KEY || 
-                      (import.meta as any).env?.VITE_GEMINI_API_KEY || 
-                      '').trim();
+      const apiKey = (process.env.API_KEY || '').trim();
       if (!apiKey) {
         throw new Error('API key is missing. Please provide a valid API key.');
       }
