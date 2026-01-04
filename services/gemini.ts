@@ -115,6 +115,9 @@ export const optimizePrompt = async (
     if (error.message?.includes('403') || error.message?.includes('forbidden')) {
       throw new Error('API key does not have permission to access Gemini API. Please enable the Generative Language API in Google Cloud Console.');
     }
+    if (error.message?.includes('429') || error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED') || error.code === 429) {
+      throw new Error('API quota exceeded. You have reached your rate limit. Please wait a moment and try again, or check your usage at https://ai.dev/usage?tab=rate-limit');
+    }
     // Re-throw with original message
     throw new Error(error.message || 'An error occurred while optimizing the prompt. Please try again.');
   }
