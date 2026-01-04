@@ -8,9 +8,9 @@ export default defineConfig(({ mode }) => {
     // Priority: Vercel env var > .env file > empty string
     const apiKey = process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || '';
     
-    // Log for debugging (only in non-production or if key is missing)
-    if (!apiKey && mode !== 'production') {
-      console.warn('⚠️  GEMINI_API_KEY not found in environment variables');
+    // Log for debugging
+    if (mode === 'production') {
+      console.log('🔑 API Key available:', apiKey ? 'Yes (hidden)' : 'No');
     }
     
     return {
@@ -21,8 +21,10 @@ export default defineConfig(({ mode }) => {
       plugins: [react()],
       define: {
         'process.env.API_KEY': JSON.stringify(apiKey),
-        'process.env.GEMINI_API_KEY': JSON.stringify(apiKey)
+        'process.env.GEMINI_API_KEY': JSON.stringify(apiKey),
+        'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(apiKey)
       },
+      envPrefix: 'VITE_',
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

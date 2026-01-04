@@ -2,7 +2,21 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { OptimizationResult, Tone, Role } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+// Get API key from environment (defined by Vite at build time)
+const getApiKey = () => {
+  // Try multiple sources for the API key
+  return (process.env.API_KEY || 
+          process.env.GEMINI_API_KEY || 
+          (import.meta as any).env?.VITE_GEMINI_API_KEY || 
+          "").trim();
+};
+
+const apiKey = getApiKey();
+if (!apiKey) {
+  console.error('⚠️ GEMINI_API_KEY is missing. Please set it in Vercel environment variables.');
+}
+
+const ai = new GoogleGenAI({ apiKey });
 
 export const optimizePrompt = async (
   prompt: string,

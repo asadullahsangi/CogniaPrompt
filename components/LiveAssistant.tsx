@@ -69,7 +69,14 @@ export const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
       const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       audioContextRef.current = outputCtx;
 
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+      const apiKey = (process.env.API_KEY || 
+                      process.env.GEMINI_API_KEY || 
+                      (import.meta as any).env?.VITE_GEMINI_API_KEY || 
+                      '').trim();
+      if (!apiKey) {
+        throw new Error('API key is missing. Please provide a valid API key.');
+      }
+      const ai = new GoogleGenAI({ apiKey });
       
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
