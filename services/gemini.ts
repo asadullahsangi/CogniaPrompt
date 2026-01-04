@@ -8,13 +8,19 @@ import { OptimizationResult, Tone, Role } from "../types";
 const getApiKey = (): string => {
   const apiKey = (process.env.API_KEY || "").trim();
   
+  // Check for placeholder values
+  if (apiKey === 'your_gemini_api_key_here' || apiKey === 'your_api_key_here') {
+    throw new Error('Please set your GEMINI_API_KEY in .env.local file (for local) or Vercel environment variables (for production).');
+  }
+  
   if (!apiKey || apiKey.length < 20) {
     console.error('❌ API Key Error:', {
       keyLength: apiKey.length,
       keyPrefix: apiKey ? apiKey.substring(0, 5) : 'EMPTY',
-      hasKey: !!apiKey
+      hasKey: !!apiKey,
+      isPlaceholder: apiKey.includes('your_')
     });
-    throw new Error('API key is missing. Please provide a valid API key.');
+    throw new Error('API key is missing. Please provide a valid API key in .env.local (local) or Vercel settings (production).');
   }
   
   return apiKey;
@@ -38,48 +44,63 @@ export const optimizePrompt = async (
   role: Role,
   extraInstructions?: string
 ): Promise<OptimizationResult> => {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: `Optimize the following prompt.
-    User's Original Prompt: "${prompt}"
-    Desired Tone: ${tone}
-    Persona/Role: ${role}
-    Additional Context: ${extraInstructions || "None"}`,
-    config: {
-      systemInstruction: `You are a world-class Prompt Engineer specializing in Large Language Model (LLM) optimization.
-      Your goal is to transform rough user inputs into high-performance, clear, and context-rich prompts.
-      Follow prompt engineering best practices: clear constraints, few-shot examples (simulated), delimiters, and explicit output formatting instructions.
-      Provide a primary optimized version, clear reasoning, a quality score (1-100), actionable tips, and three variants (Short, Detailed, Creative).`,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          optimizedPrompt: { type: Type.STRING },
-          reasoning: { type: Type.STRING },
-          score: { type: Type.NUMBER },
-          tips: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING }
-          },
-          variants: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                label: { type: Type.STRING },
-                content: { type: Type.STRING }
-              },
-              required: ["label", "content"]
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Optimize the following prompt.
+      User's Original Prompt: "${prompt}"
+      Desired Tone: ${tone}
+      Persona/Role: ${role}
+      Additional Context: ${extraInstructions || "None"}`,
+      config: {
+        systemInstruction: `You are a world-class Prompt Engineer specializing in Large Language Model (LLM) optimization.
+        Your goal is to transform rough user inputs into high-performance, clear, and context-rich prompts.
+        Follow prompt engineering best practices: clear constraints, few-shot examples (simulated), delimiters, and explicit output formatting instructions.
+        Provide a primary optimized version, clear reasoning, a quality score (1-100), actionable tips, and three variants (Short, Detailed, Creative).`,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            optimizedPrompt: { type: Type.STRING },
+            reasoning: { type: Type.STRING },
+            score: { type: Type.NUMBER },
+            tips: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+            variants: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  label: { type: Type.STRING },
+                  content: { type: Type.STRING }
+                },
+                required: ["label", "content"]
+              }
             }
-          }
-        },
-        required: ["optimizedPrompt", "reasoning", "score", "tips", "variants"]
+          },
+          required: ["optimizedPrompt", "reasoning", "score", "tips", "variants"]
+        }
       }
-    }
-  });
+    });
 
-  const text = response.text;
-  if (!text) throw new Error("No response from AI");
-  return JSON.parse(text) as OptimizationResult;
+    const text = response.text;
+    if (!text) throw new Error("No response from AI");
+    return JSON.parse(text) as OptimizationResult;
+  } catch (error: any) {
+    // Provide more helpful error messages
+    if (error.message?.includes('API key')) {
+      throw error; // Re-throw our custom API key error
+    }
+    if (error.message?.includes('401') || error.message?.includes('unauthorized')) {
+      throw new Error('Invalid API key. Please check your GEMINI_API_KEY in .env.local (local) or Vercel settings (production).');
+    }
+    if (error.message?.includes('403') || error.message?.includes('forbidden')) {
+      throw new Error('API key does not have permission to access Gemini API. Please enable the Generative Language API in Google Cloud Console.');
+    }
+    // Re-throw with original message
+    throw new Error(error.message || 'An error occurred while optimizing the prompt. Please try again.');
+  }
 };
