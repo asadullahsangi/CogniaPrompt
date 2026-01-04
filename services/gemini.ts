@@ -2,20 +2,22 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { OptimizationResult, Tone, Role } from "../types";
 
-// Get API key from environment (defined by Vite at build time via define)
+// Get API key from environment
 // Vite's define replaces process.env.API_KEY with the actual value at build time
-const apiKey = (process.env.API_KEY || "").trim();
+// @ts-ignore - process.env.API_KEY is replaced by Vite's define
+const apiKey: string = (process.env.API_KEY || "").trim();
 
-// Debug logging (only in development)
-if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-  console.log('API Key length:', apiKey.length);
-  console.log('API Key starts with:', apiKey.substring(0, 10) + '...');
+// Runtime validation
+if (!apiKey || apiKey.length < 20) {
+  console.error('❌ API Key Error:', {
+    keyLength: apiKey.length,
+    keyPrefix: apiKey ? apiKey.substring(0, 5) : 'EMPTY',
+    hasKey: !!apiKey
+  });
+  throw new Error('API key is missing. Please provide a valid API key.');
 }
 
-if (!apiKey) {
-  console.error('⚠️ GEMINI_API_KEY is missing. Please set it in Vercel environment variables.');
-  console.error('process.env.API_KEY value:', process.env.API_KEY);
-}
+console.log('✅ API Key loaded successfully, length:', apiKey.length);
 
 const ai = new GoogleGenAI({ apiKey });
 

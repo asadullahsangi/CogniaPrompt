@@ -9,9 +9,13 @@ export default defineConfig(({ mode }) => {
     const apiKey = process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || '';
     
     // Log for debugging
-    if (mode === 'production') {
-      console.log('🔑 API Key available:', apiKey ? 'Yes (hidden)' : 'No');
-    }
+    console.log('🔑 Build-time API Key check:', {
+      mode,
+      hasVercelEnv: !!process.env.GEMINI_API_KEY,
+      hasLocalEnv: !!env.GEMINI_API_KEY,
+      finalKeyLength: apiKey.length,
+      keyPrefix: apiKey ? apiKey.substring(0, 10) + '...' : 'EMPTY'
+    });
     
     return {
       server: {
@@ -20,8 +24,10 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
+        // Replace process.env.API_KEY with actual value at build time
         'process.env.API_KEY': JSON.stringify(apiKey),
         'process.env.GEMINI_API_KEY': JSON.stringify(apiKey),
+        // Also expose via import.meta.env (Vite standard)
         'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(apiKey)
       },
       envPrefix: 'VITE_',
