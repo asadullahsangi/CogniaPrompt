@@ -17,7 +17,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">C</span>
               </div>
-              <span className="text-xl font-bold text-slate-900 tracking-tight">CogniaPrompt</span>
+              <span className="text-xl font-bold text-slate-900 tracking-tight">CogniaPrompt<span className="text-sm font-normal text-slate-500 ml-2">Prompt Optimizer</span></span>
             </div>
             <nav className="hidden md:flex space-x-8">
               <button 
