@@ -4,9 +4,16 @@ import { OptimizationResult, Tone, Role } from "../types";
 
 // Get API key from environment
 // Vite's define replaces process.env.API_KEY with the actual value at build time
-// @ts-ignore - process.env.API_KEY is replaced by Vite's define
+// Also check import.meta.env as fallback (Vite standard)
 const getApiKey = (): string => {
-  const apiKey = (process.env.API_KEY || "").trim();
+  // @ts-ignore - process.env.API_KEY is replaced by Vite's define
+  let apiKey = (process.env.API_KEY || "").trim();
+  
+  // Fallback to import.meta.env (Vite standard)
+  if (!apiKey && typeof import.meta !== 'undefined') {
+    // @ts-ignore
+    apiKey = (import.meta.env?.VITE_GEMINI_API_KEY || import.meta.env?.GEMINI_API_KEY || "").trim();
+  }
   
   // Check for placeholder values
   if (apiKey === 'your_gemini_api_key_here' || apiKey === 'your_api_key_here') {
@@ -18,7 +25,11 @@ const getApiKey = (): string => {
       keyLength: apiKey.length,
       keyPrefix: apiKey ? apiKey.substring(0, 5) : 'EMPTY',
       hasKey: !!apiKey,
-      isPlaceholder: apiKey.includes('your_')
+      isPlaceholder: apiKey.includes('your_'),
+      hasProcessEnv: typeof process !== 'undefined',
+      hasImportMeta: typeof import.meta !== 'undefined',
+      // @ts-ignore
+      importMetaKeys: typeof import.meta !== 'undefined' ? Object.keys(import.meta.env || {}).filter(k => k.includes('API') || k.includes('GEMINI')) : []
     });
     throw new Error('API key is missing. Please provide a valid API key in .env.local (local) or Vercel settings (production).');
   }
