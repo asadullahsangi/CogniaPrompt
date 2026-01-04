@@ -3,16 +3,20 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { OptimizationResult, Tone, Role } from "../types";
 
 // Get API key from environment
-// Vite's define replaces process.env.API_KEY with the actual value at build time
-// Also check import.meta.env as fallback (Vite standard)
+// Try multiple sources: Vite's define replacement, then import.meta.env (Vite standard)
 const getApiKey = (): string => {
   // @ts-ignore - process.env.API_KEY is replaced by Vite's define
   let apiKey = (process.env.API_KEY || "").trim();
   
-  // Fallback to import.meta.env (Vite standard)
+  // Fallback to import.meta.env (Vite standard - automatically available for VITE_ prefixed vars)
   if (!apiKey && typeof import.meta !== 'undefined') {
     // @ts-ignore
-    apiKey = (import.meta.env?.VITE_GEMINI_API_KEY || import.meta.env?.GEMINI_API_KEY || "").trim();
+    apiKey = (import.meta.env?.VITE_GEMINI_API_KEY || "").trim();
+  }
+  
+  // Also try process.env.GEMINI_API_KEY (in case define didn't work)
+  if (!apiKey && typeof process !== 'undefined' && process.env) {
+    apiKey = (process.env.GEMINI_API_KEY || "").trim();
   }
   
   // Check for placeholder values
