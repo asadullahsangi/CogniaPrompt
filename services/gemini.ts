@@ -5,21 +5,32 @@ import { OptimizationResult, Tone, Role } from "../types";
 // Get API key from environment
 // Vite's define replaces process.env.API_KEY with the actual value at build time
 // @ts-ignore - process.env.API_KEY is replaced by Vite's define
-const apiKey: string = (process.env.API_KEY || "").trim();
+const getApiKey = (): string => {
+  const apiKey = (process.env.API_KEY || "").trim();
+  
+  if (!apiKey || apiKey.length < 20) {
+    console.error('❌ API Key Error:', {
+      keyLength: apiKey.length,
+      keyPrefix: apiKey ? apiKey.substring(0, 5) : 'EMPTY',
+      hasKey: !!apiKey
+    });
+    throw new Error('API key is missing. Please provide a valid API key.');
+  }
+  
+  return apiKey;
+};
 
-// Runtime validation
-if (!apiKey || apiKey.length < 20) {
-  console.error('❌ API Key Error:', {
-    keyLength: apiKey.length,
-    keyPrefix: apiKey ? apiKey.substring(0, 5) : 'EMPTY',
-    hasKey: !!apiKey
-  });
-  throw new Error('API key is missing. Please provide a valid API key.');
-}
+// Lazy initialization - only create AI instance when needed
+let aiInstance: GoogleGenAI | null = null;
 
-console.log('✅ API Key loaded successfully, length:', apiKey.length);
-
-const ai = new GoogleGenAI({ apiKey });
+const getAI = (): GoogleGenAI => {
+  if (!aiInstance) {
+    const apiKey = getApiKey();
+    console.log('✅ API Key loaded successfully, length:', apiKey.length);
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+};
 
 export const optimizePrompt = async (
   prompt: string,
@@ -27,6 +38,7 @@ export const optimizePrompt = async (
   role: Role,
   extraInstructions?: string
 ): Promise<OptimizationResult> => {
+  const ai = getAI();
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Optimize the following prompt.

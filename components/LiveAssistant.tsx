@@ -69,8 +69,9 @@ export const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
       const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       audioContextRef.current = outputCtx;
 
+      // @ts-ignore - process.env.API_KEY is replaced by Vite's define
       const apiKey = (process.env.API_KEY || '').trim();
-      if (!apiKey) {
+      if (!apiKey || apiKey.length < 20) {
         throw new Error('API key is missing. Please provide a valid API key.');
       }
       const ai = new GoogleGenAI({ apiKey });
